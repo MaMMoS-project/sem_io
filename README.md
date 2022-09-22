@@ -60,7 +60,7 @@ All the functions are staticmethods, so you don't need to instantiate the SEMpar
 >>> pixel_size, unit = sem_io.SEMparams.get_image_pixel_size("path_to_my_image.tif")
 ```
 
-This is useful if you want to plot the SEM image using [matplotlib](https://matplotlib.org/) and add a scalebar with the correct dimensions using [matplotlib-scalebar](https://github.com/ppinard/matplotlib-scalebar):
+This is useful if you want to plot the SEM image using [matplotlib](https://matplotlib.org/) and add a scalebar with the correct dimensions using [matplotlib-scalebar](https://github.com/ppinard/matplotlib-scalebar). Here's the whole process as an example:
 
 ```python
 >>> import matplotlib.pyplot as plt

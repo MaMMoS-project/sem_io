@@ -22,89 +22,202 @@
 
 """
 This module provides some helper functions to extract and view parameters
-stored in the header of SEM images (.tif) recorded using the software
-Zeiss SmartSEM V06.
+stored in the header of SEM images (.tif) recorded using either the software
+Zeiss SmartSEM or the software Thermo Fisher Scientific xT.
 """
 
 import os
 import argparse
+import json
+import math
 
 from PIL import Image
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 class SEMparams():
     """
-    Class to extract and hold SEM parameters from the .tif images
-    output from the software Zeiss SmartSEM V06.
+    Class to extract and hold SEM parameters from the header of
+    a .tif image output from either the software Zeiss SmartSEM
+    or the software Thermo Fisher Scientific xT.
     """
-    PARAM_NAMES = {"val_unit" : ["Image Pixel Size =",
-                                 "Stage at X =",
-                                 "Stage at Y =",
-                                 "Stage at Z =",
-                                 "Stage at R =",
-                                 "Dwell Time =",
-                                 "C3 Lens I =",
-                                 "Cycle Time =",
-                                 "Line Time =",
-                                 "Stigmation X =",
-                                 "Stigmation Y =",
-                                 "Aperture Size =",
-                                 "Aperture at X =",
-                                 "Aperture at Y =",
-                                 "Beam Shift X =",
-                                 "Beam Shift Y =",
-                                 "Gun Vacuum =",
-                                 "System Vacuum =",
-                                 "WD =",
-                                 "Mag =",
-                                 "Brightness =",
-                                 "Contrast =",
-                                 "Fil I =",
-                                 "EHT ="
-                                 ],
+    TAGS = {"Zeiss" : 34118,
+            "ThermoFisher" : 34682
+            }
 
-                   "string" : ["File Name =",
-                               "Dyn.Focus =",
-                               "BSD Gain =",
-                               "Detector =",
-                               "Store resolution =",
-                               "Tilt Corrn. =",
-                               "High Current =",
-                               "Line Avg.Count =",
-                               "Scan Speed =",
-                               "Time :",
-                               "Date :"
+    ZEISS_PARAM_LOCS = {'Dwell Time': 'DP',
+                        'Dyn.Focus': 'DP',
+                        'BSD Gain': 'DP',
+                        'Detector': 'DP',
+                        'Store resolution': 'DP',
+                        'Tilt Corrn.': 'DP',
+                        'High Current': 'DP',
+                        'Scan Speed': 'DP',
+                        'Image Pixel Size': 'AP',
+                        'Stage at X': 'AP',
+                        'Stage at Y': 'AP',
+                        'Stage at Z': 'AP',
+                        'Stage at R': 'AP',
+                        'C3 Lens I': 'AP',
+                        'Cycle Time': 'AP',
+                        'Line Time': 'AP',
+                        'Stigmation X': 'AP',
+                        'Stigmation Y': 'AP',
+                        'Aperture Size': 'AP',
+                        'Aperture at X': 'AP',
+                        'Aperture at Y': 'AP',
+                        'Beam Shift X': 'AP',
+                        'Beam Shift Y': 'AP',
+                        'Gun Vacuum': 'AP',
+                        'System Vacuum': 'AP',
+                        'WD': 'AP',
+                        'Mag': 'AP',
+                        'Brightness': 'AP',
+                        'Contrast': 'AP',
+                        'Fil I': 'AP',
+                        'EHT': 'AP',
+                        'Line Avg.Count': 'AP',
+                        'Time': 'AP',
+                        'Date': 'AP',
+                        'File Name': 'SV'
+                        }
+
+
+
+    ZEISS_GROUPS = {"General" : ["File Name", "Date", "Time"],
+                    "SEM" : ["Gun Vacuum", "System Vacuum", "Fil I",
+                             "Tilt Corrn.", "Dyn.Focus", "High Current", "EHT"
+                             ],
+                    "Beam" : ["Aperture Size",
+                              "Aperture at X", "Aperture at Y",
+                              "Stigmation X", "Stigmation Y",
+                              "Beam Shift X", "Beam Shift Y",
+                              "C3 Lens I"
+                              ],
+                    "Scanning" : ["Mag", "Cycle Time", "Scan Speed",
+                                  "Line Time", "Dwell Time", "Line Avg.Count"
+                                  ],
+                    "Image" : ["Detector", "Store resolution", "Image Pixel Size",
+                               "Brightness", "Contrast", "BSD Gain"
+                               ],
+                    "Stage" : ["Stage at X", "Stage at Y",
+                               "Stage at Z", "Stage at R", "WD"
                                ]
-                   }
+                    }
 
 
-    GROUPS = {"General" : ["File Name", "Date", "Time"],
-              "SEM" : ["Gun Vacuum", "System Vacuum", "Fil I",
-                       "Tilt Corrn.", "Dyn.Focus", "High Current", "EHT"],
-              "Beam" : ["Aperture Size",
-                        "Aperture at X", "Aperture at Y",
-                        "Stigmation X", "Stigmation Y",
-                        "Beam Shift X", "Beam Shift Y",
-                        "C3 Lens I"],
-              "Scanning" : ["Mag", "Cycle Time", "Scan Speed",
-                            "Line Time", "Dwell Time", "Line Avg.Count"],
-              "Image" : ["Detector", "Store resolution", "Image Pixel Size",
-                         "Brightness", "Contrast", "BSD Gain"],
-              "Stage" : ["Stage at X", "Stage at Y",
-                         "Stage at Z", "Stage at R", "WD"]
-              }
+    TF_PARAM_LOCS = {'Date' : "[User]",
+                     'Time' : "[User]",
+                     'User' : "[User]",
+                     'SystemType' : "[System]",
+                     'HV' : '[Beam]',
+                     'Spot' : '[Beam]',
+                     'StigmatorX' : '[Beam]',
+                     'StigmatorY' : '[Beam]',
+                     'BeamShiftX' : '[Beam]',
+                     'BeamShiftY' : '[Beam]',
+                     'ScanRotation' : '[Beam]',
+                     'ApertureDiameter' : '[EBeam]',
+                     'HFW' : '[EBeam]',
+                     'VFW' : '[EBeam]',
+                     'WD' : '[EBeam]',
+                     'BeamCurrent' : '[EBeam]',
+                     'TiltCorrectionIsOn' : '[EBeam]',
+                     'DynamicFocusIsOn' : '[EBeam]',
+                     'UseCase' : '[EBeam]',
+                     'SourceTiltX' : '[EBeam]',
+                     'SourceTiltY' : '[EBeam]',
+                     'StageX' : '[EBeam]',
+                     'StageY' : '[EBeam]',
+                     'StageZ' : '[EBeam]',
+                     'StageR' : '[EBeam]',
+                     'StageTa' : '[EBeam]',
+                     'EmissionCurrent' : '[EBeam]',
+                     'TiltCorrectionAngle' : '[EBeam]',
+                     'PreTilt' : '[EBeam]',
+                     'AngularFieldWidth' : '[EBeam]',
+                     'AngularPixelWidth' : '[EBeam]',
+                     'ElectronChannelingPatternIsOn' : '[EBeam]',
+                     'Dwelltime' : '[Scan]',
+                     'PixelWidth' : '[Scan]',
+                     'Average' : '[Scan]',
+                     'Integrate' : '[Scan]',
+                     'FrameTime' : '[Scan]',
+                     'LineTime' : '[EScan]',
+                     'SpecTilt' : '[Stage]',
+                     'ResolutionX' : '[Image]',
+                     'ResolutionY' : '[Image]',
+                     'ChPressure' : '[Vacuum]',
+                     'SpecimenCurrent' : '[Specimen]',
+                     'Number' : '[Detectors]',
+                     'Name' : '[Detectors]',
+                     'Mode' : '[Detectors]',
+                     'Contrast' : '#spec#',
+                     'Brightness' : '#spec#',
+                     'Signal' : '#spec#',
+                     'Setting' : '#spec#',
+                     'MinimumDwellTime' : '#spec#',
+                     'DataBarSelected' : '[PrivateFei]',
+                     'DatabarHeight' : '[PrivateFei]'
+                     }
+
+    TF_GROUPS = {"General" : ["Date", "Time", "User", "SystemType"],
+                 "SEM" : ["HV", "ChPressure", "EmissionCurrent"],
+                 "Beam" : ["ApertureDiameter", "Spot", "BeamCurrent",
+                           "SpecimenCurrent",
+                           "StigmatorX", "StigmatorY",
+                           "BeamShiftX", "BeamShiftY", "UseCase",
+                           "SourceTiltX", "SourceTiltY"
+                           ],
+                 "Scanning" : ["FrameTime", "LineTime",
+                               "Dwelltime", "Average", "Integrate",
+                               "ScanRotation", "TiltCorrectionIsOn",
+                               "TiltCorrectionAngle", "DynamicFocusIsOn",
+                               "PreTilt", "SpecTilt", "MinimumDwellTime"
+                               ],
+                 "Detector" : ["Number", "Name", "Mode",
+                               "Contrast", "Brightness", "Signal",
+                               "Setting"
+                               ],
+                 "Image" : ["ResolutionX", "ResolutionY", "PixelWidth",
+                            "HFW", "VFW", "ElectronChannelingPatternIsOn",
+                            "AngularPixelWidth", "AngularFieldWidth",
+                            "DataBarSelected", "DatabarHeight"
+                            ],
+                 "Stage" : ["StageX", "StageY", "StageZ", "StageR",
+                            "StageTa", "WD"
+                            ]
+                 }
 
 
     @staticmethod
     def dwell_time_from_scan_speed(scan_speed):
         """
-        This formula is taken from the table in help of the SEM software.
-        It converts the scan speed (int, 1-15) into a dwell time for
-        a pixel in seconds. This is necessary currently (21.11.2016) because
-        the dwell time parameter in the image header is always 100 ns and
+        Calculates a dwell time in seconds from the scan speed
+        used to acquire the image.
+
+        Relevant for Zeiss SmartSEM image headers.
+
+        This formula is taken from the table in help of the
+        Zeiss SmartSEM software. It converts the scan speed (int, 1-15)
+        into a dwell time of the beam on a pixel in seconds.
+        This is necessary currently (21.11.2016) because the dwell
+        time parameter in the image header is always 100 ns and
         this is wrong - it should vary with scan speed.
+
+
+        Parameters
+        ----------
+        scan_speed : INT
+            The scan speed (1-15) which was used to acquire the
+            image.
+
+        Returns
+        -------
+        FLOAT
+            The calculated dwell time in seconds.
+
         """
         return 1.0E-7 * 2**(scan_speed-1)
 
@@ -116,6 +229,9 @@ class SEMparams():
         ':' sign in one line of the image header, separates the string
         using a space, then returns a 2-tuple of the first element as
         a float and the rest of the original string as a str.
+
+        Relevant for Zeiss SmartSEM image headers.
+
 
         Parameters
         ----------
@@ -135,19 +251,23 @@ class SEMparams():
 
 
     @staticmethod
-    def read_image_header(image_path):
+    def get_image_type_and_header(image_path):
         """
-        Takes a path to an SEM image (.tif) reads it using PIL.Image
-        and extracts the header data in tag 34118. Raises exceptions
-        if the path does not point to a .tif image or if the tag 34118
-        is missing.
+        Checks that the image_path points to a .tif file and
+        raises an exception if not. Then looks for the tags
+        34118 and 34682 in the file and returns a string
+        specifying if the image was generated using the software
+        from Zeiss (tag 34118) or Thermo Fisher Scientific
+        (tag 34682). The image header string under the corresponding
+        tag is also returned. Raises an exception if neither tag is
+        found, or if both tags are found.
 
-        Returns a list of strings corresponding to the lines of the header.
 
         Parameters
         ----------
         imagePath : STR
-            Full path to an SEM image (.tif) recorded with Zeiss SmartSEM V06.
+            Full path to an SEM image (.tif) recorded with either
+            Zeiss SmartSEM V06 or Thermo Fisher Scientific xT.
 
         Raises
         ------
@@ -155,78 +275,168 @@ class SEMparams():
             If the image path does not point to a .tif file.
 
         Exception
-            If the tag 34118 is missing from the .tif file.
+            If both tags 34118 and 34682 are missing from the .tif file,
+            indicating that it was not generated by either Zeiss
+            SmartSEM or by Thermo Fisher Scientific xT.
+
+        Exception
+            If both tags 34118 and 34682 are present in the .tif file,
+            the image type is indeterminate.
 
         Returns
         -------
-        sem_img_header : LIST
-            A list of strings corresponding to the lines of the image header.
+        img_type : str
+            Either "Zeiss" or "ThermoFisher" indicating from which
+            manufacturer the image stems.
+        img_header : str
+            String containing the data from the image header.
 
         """
         if not os.path.splitext(image_path)[-1] == ".tif":
             q_0 = "The image path must point to a .tif file."
             raise Exception("".join(["sem_io:", q_0])) from None
 
-        try:
-            with Image.open(image_path) as sem_img:
-                sem_img_header = sem_img.tag[34118][0].split("\r\n")
-        except KeyError:
-            q_0 = "The image does not appear to be from the SmartSEM software"
-            q_1 = ": Missing Tag 34118"
-            raise Exception("".join(["sem_io: ", q_0, q_1])) from None
+        n_matches = 0
+        with Image.open(image_path) as sem_img:
+            for t, v in SEMparams.TAGS.items():
+                if v in sem_img.tag:
+                    img_type = t
+                    img_header = sem_img.tag[v][0].strip()
+                    n_matches += 1
 
-        return sem_img_header
+        if n_matches == 0:
+            q_0 = "The image does not appear to be from either"
+            q_1 = " or ".join(SEMparams.TAGS.keys()) + " software. Missing tags"
+            q_2 = " and ".join(str(i) for i in SEMparams.TAGS.values()) + "."
+            raise Exception(" ".join(["sem_io:", q_0, q_1, q_2])) from None
+
+        if n_matches > 1:
+            q_0 = f"Unclear image type: {n_matches} of tags"
+            q_1 = " and ".join(str(i) for i in SEMparams.TAGS.values())
+            q_2 = "are present in this file."
+            raise Exception(" ".join(["sem_io:", q_0, q_1, q_2])) from None
+
+        return img_type, img_header
 
 
     @staticmethod
-    def extract_params(image_path):
+    def extract_params_Zeiss(image_header):
         """
-        Takes a path to an SEM image (.tif) reads it using PIL.Image
-        and extracts the various useful parameters which are stored in
-        the image header including: file name, stage X, Y, Z and R positions
-        and the pixel size.
-
-        The parameters extracted are defined in SEMparams.PARAM_NAMES
-
-        The values extracted are returned as a dict.
+        Extracts all parameters stored in the header of images
+        produced using the Zeiss SmartSEM software. The parameters
+        are returned as a dict which contains the keys "DP", "AP" and
+        "SV", under which the parameters are grouped as further dicts.
+        In the sub-dicts, the key is a string giving the parameter name
+        and the value is a the parameter string. This can either be
+        a value and a unit or a text string.
 
         Parameters
         ----------
-        imagePath : STR
-            Full path to an SEM image (.tif) recorded with Zeiss SmartSEM V06.
+        image_header : STR
+            Str containing the image header read from tag 34118 of
+            a .tif file from the Zeiss SmartSEM software.
 
         Returns
         -------
         params : DICT
-            A dict where the keys are the names of the parameters and the
-            values are either 2-tuples containing the value of the parameter
-            and if applicable, the unit; or a string containing the parameter.
+            a dict which contains the keys "DP", "AP" and
+            "SV", under which the parameters are grouped as further dicts.
+            In the sub-dicts, the key is a string giving the parameter name
+            and the value is the parameter string. This can either be
+            a value and a unit or a text string.
 
         """
-        sem_img_header = SEMparams.read_image_header(image_path)
+        img_hdr = image_header.split("\r\n")
 
+        idx = [i for i, item in enumerate(img_hdr[:-1]) if item[0].isalpha()][0]
+
+        locs = range(idx+1, len(img_hdr), 2)
+
+        params = {"DP" : {}, "AP" : {}, "SV" : {}}
+        for i in locs:
+            t = img_hdr[i].find("=")
+            if t != -1:
+                k, v = img_hdr[i].split("=")
+                grp = img_hdr[i - 1][:2]
+                params[grp][k.strip()] = v.strip()
+            else:
+                t = img_hdr[i].find(":")
+                if t != -1:
+                    k = img_hdr[i][:t]
+                    v = img_hdr[i][t + 1:]
+                    grp = img_hdr[i - 1][:2]
+                    params[grp][k.strip()] = v.strip()
+
+
+        s_sp = int(params["DP"]["Scan Speed"])
+        dw_t = SEMparams.dwell_time_from_scan_speed(s_sp)
+        params["DP"]["Dwell Time"] = f"{dw_t:.5e} s"
+
+        if "V05" in params["SV"]["Version"]:
+            pix_size = params["AP"].pop("Pixel Size")
+            params["AP"]["Image Pixel Size"] = pix_size
+
+        return params
+
+
+    @staticmethod
+    def extract_params_ThermoFisher(image_header):
+        """
+        Extracts all parameters stored in the header of images
+        produced using the ThermoFisher xT software. The parameters
+        are returned as a dict whose keys represent various groups.
+        Under the group keys, the parameters are stored as further
+        dicts. In the sub-dicts, the key is a string giving the
+        parameter name and the value is a the parameter string.
+        This can either be a value (no units are given in the
+        header but the values appear to correspond to SI units)
+        or a text string.
+
+        Note: currently (26/09/2023 with software version 23.3.1.22195)
+        the groups following [HiResIllumination] are not properly
+        separated with a double space: "\r\n\r\n". THis appears
+        to be a bug in the software. This is why the extra fudge
+        is needed here to extract those last few groups properly.
+
+
+        Parameters
+        ----------
+        image_header : STR
+            Str containing the image header read from tag 34682 of
+            a .tif file from the Thermo Fisher Scientific
+            software xT.
+
+        Returns
+        -------
+        params : DICT
+            a dict whose keys represent various groups of parameters.
+            Under the group keys, the parameters are stored as further
+            dicts. In the sub-dicts, the key is a string giving the
+            parameter name and the value is a the parameter string.
+            This can either be a value (no units are given) or a
+            text string.
+
+        """
         params = {}
-        v_u = list(SEMparams.PARAM_NAMES["val_unit"])
-        strg = list(SEMparams.PARAM_NAMES["string"])
 
+        groups = image_header.split("\r\n\r\n")
 
-        while sum([len(g) for g in [v_u, strg]]) > 0:
-            for i in sem_img_header:
-                for nom in v_u:
-                    if i[:len(nom)] == nom:
-                        j = i[len(nom):].strip()
-                        params[nom[:-2]] = SEMparams.get_val(j)
-                        v_u.remove(nom)
-                        break
-
-                for nom in strg:
-                    if i[:len(nom)] == nom:
-                        params[nom[:-2]] = i[len(nom):].strip()
-                        strg.remove(nom)
-                        break
-
-        s_sp = int(params["Scan Speed"][0])
-        params["Dwell Time"] = (SEMparams.dwell_time_from_scan_speed(s_sp), 's')
+        for g in groups:
+            if not g[:19] == '[HiResIllumination]':
+                p = g.split("\r\n")
+                params[p[0]] = {}
+                for i in p[1:]:
+                    j = i.split("=")
+                    params[p[0]][j[0].strip()] = j[1].strip()
+            else:
+                idx = [i for i, j in enumerate(g) if j == "["]
+                g_s = [g[i:j].split("\r\n") for i, j in zip(idx, idx[1:]+[None])]
+                for m in g_s:
+                    params[m[0]] = {}
+                    for n in m[1:]:
+                        if len(n) > 0:
+                            t = n.split("=")
+                            params[m[0]][t[0].strip()] = t[1].strip()
 
         return params
 
@@ -237,13 +447,18 @@ class SEMparams():
         Bespoke method to get the value of the image pixel size
         and the corresponding unit from the header of an SEM image.
 
-        Takes a path to an SEM image (.tif) reads it using PIL.Image
-        and extracts the pixel size.
+        If the image is an Electron Channeling Pattern acquired with
+        the Thermo Fisher Scientific xT software, it will be calibrated
+        in degrees rather than metres. This function returns the pixel
+        size in degrees and the unit 'deg', in that case.
+
 
         Parameters
         ----------
         imagePath : STR
-            Full path to an SEM image (.tif) recorded with Zeiss SmartSEM V06.
+            Full path to an SEM image (.tif) recorded with either
+            Zeiss SmartSEM or Thermo Fisher Scientific xT
+            software.
 
         Returns
         -------
@@ -252,102 +467,225 @@ class SEMparams():
             a float and the unit as a string.
 
         """
-        sem_img_header = SEMparams.read_image_header(image_path)
+        img_type, img_header = SEMparams.get_image_type_and_header(image_path)
 
-        nom = "Image Pixel Size ="
+        if img_type == "Zeiss":
+            params = SEMparams.extract_params_Zeiss(img_header)
+            img_pix_size = SEMparams.get_val(params["AP"]["Image Pixel Size"])
 
-        for i in sem_img_header:
-            if i[:len(nom)] == nom:
-                j = i[len(nom):].strip()
-                img_pix_size = SEMparams.get_val(j)
-                break
+        elif img_type == "ThermoFisher":
+            params = SEMparams.extract_params_ThermoFisher(img_header)
+            if "ElectronChannelingPatternIsOn" in params["[EBeam]"]:
+                if params["[EBeam]"]["ElectronChannelingPatternIsOn"] == "On":
+                    img_pix_size = (math.degrees(float(params["[EBeam]"]["AngularPixelWidth"])), "deg")
+                else:
+                    img_pix_size = (float(params["[Scan]"]["PixelWidth"]), "m")
+            else:
+                img_pix_size = (float(params["[Scan]"]["PixelWidth"]), "m")
 
         return img_pix_size
 
 
     @staticmethod
-    def group_parameters(params):
+    def group_parameters_Zeiss(params):
         """
-        Take the unsorted dict of the parameters extracted from the
-        image header using extract_params() and group them according
-        to the scheme defined in GROUPS. Return a dict of dict containing
-        the grouped parameters.
+        Take the dict of the parameters extracted from the image header
+        using extract_params_Zeiss() and regroup selected params according
+        to the scheme defined in ZEISS_GROUPS. Return a dict of dicts
+        containing the regrouped selected parameters.
 
         Parameters
         ----------
         params : DICT
             A dict of parameters extracted from an SEM image
+            using extract_params_Zeiss()
 
         Returns
         -------
         params_grouped : DICT
-            A dict of dicts containing the parameters grouped according
-            to the scheme defined in GROUPS.
+            A dict of dicts containing selected parameters grouped
+            according to the scheme defined in ZEISS_GROUPS.
 
         """
-        params_grouped = {key : {k : None for k in value} for (key, value) in
-                          SEMparams.GROUPS.items()}
+        params_grouped = {key : {k : '' for k in value} for (key, value) in
+                          SEMparams.ZEISS_GROUPS.items()}
 
         for k in params_grouped:
             for j in params_grouped[k]:
-                params_grouped[k][j] = params[j]
+                g = SEMparams.ZEISS_PARAM_LOCS[j]
+                try:
+                    params_grouped[k][j] = params[g][j]
+                except KeyError:
+                    pass
 
         return params_grouped
 
 
     @staticmethod
-    def print_params(params_grouped):
+    def group_parameters_ThermoFisher(params):
         """
-        Print all params in groups.
+        Take the dict of the parameters extracted from the image header
+        using extract_params_ThermoFisher() and regroup selected params
+        according to the scheme defined in TF_GROUPS. Return a dict of
+        dicts containing the regrouped selected parameters.
+
+        Parameters
+        ----------
+        params : DICT
+            A dict of parameters extracted from an SEM image
+            using extract_params_ThermoFisher()
+
+        Returns
+        -------
+        params_grouped : DICT
+            A dict of dicts containing selected parameters grouped
+            according to the scheme defined in TF_GROUPS.
+
         """
-        for i in params_grouped:
-            print(i+" parameters:")
-            for j in params_grouped[i]:
-                print("\t"+j+" =", end=' ')
-                if isinstance(params_grouped[i][j], str):
-                    print(params_grouped[i][j], end=' ')
-                else:
-                    for k in enumerate(params_grouped[i][j]):
-                        print(k[1], end=' ')
-                print()
+        params_grouped = {key : {k : '' for k in value} for (key, value) in
+                          SEMparams.TF_GROUPS.items()}
+
+        for k in params_grouped:
+            for j in params_grouped[k]:
+                g = SEMparams.TF_PARAM_LOCS[j]
+                if g == "#spec#":
+                    g = f"[{params['[Detectors]']['Name']}]"
+                try:
+                    params_grouped[k][j] = params[g][j]
+                except KeyError:
+                    pass
+
+        return params_grouped
+
+    @staticmethod
+    def print_param_dict(p_dict):
+        """
+        Print a dict of params grouped under keys to stdout.
+
+
+        Parameters
+        ----------
+        p_dict : DICT
+            Either:
+            A dict containing selected parameters grouped under
+            various categories. This dict is created by either
+            SEMparams.group_parameters_Zeiss() or
+            SEMparams.group_parameters_ThermoFisher(). The groups
+            and parameters are defined as class attributes of the
+            SEMparams class.
+
+            Or:
+            A dict containing ALL the parameters in the header
+            read by SEMparams.extract_params_Zeiss() or
+            SEMparams.extract_params_ThermoFisher()
+
+        Returns
+        -------
+        None.
+
+        """
+        for i in p_dict:
+            print(f"{i} parameters:")
+            for j, k in p_dict[i].items():
+                print(f"\t{j} = {k}")
             print()
+
+
+    @staticmethod
+    def dump_params_to_json(p_dict, filename, image_path=None):
+        """
+        Take a dict containing either the parameters extracted
+        from the image header (by either
+        SEMparams.extract_parameters_Zeiss() or
+        SEMparams.extract_parameters_ThermoFisher()) or a selection
+        of parameters grouped into different categories (by either
+        SEMparams.group_parameters_Zeiss() or
+        SEMparams.group_parameters_ThermoFisher()) and dump these to
+        a json file with the path filename. Optionally add
+        the full path to the original image to the json.
+
+        Parameters
+        ----------
+        p_dict : DICT
+            Either the parameters extracted
+            from the image header (by either
+            SEMparams.extract_parameters_Zeiss() or
+            SEMparams.extract_parameters_ThermoFisher()) or a selection
+            of parameters grouped into different categories (by either
+            SEMparams.group_parameters_Zeiss() or
+            SEMparams.group_parameters_ThermoFisher())
+        filename : STR
+            Full path to the destination json file.
+        image_path : None or STR, optional
+            Setting this parameter to a string results in this string
+            being written to the json output under the key
+            "Original image path". The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+        p_d = p_dict.copy()
+
+        if isinstance(image_path, str):
+            p_d["Original image path"] = image_path
+
+        with open(filename, "w") as f:
+            json.dump(p_d, f, indent=2)
+
 
 
 
     def __init__(self, image_path, verbose=True):
         """
-        Initialise with the path to a .tif image from the
-        Zeiss SmartSEM V06 software.
+        Initialise with the path to a .tif image from either the
+        Zeiss SmartSEM or with Thermo Fisher Scientific xT software.
+        Extract and store params and, optionally, print selected
+        parameters to the screen.
+
+        Parameters
+        ----------
+        imagePath : STR
+            Full path to an SEM image (.tif) recorded with either
+            Zeiss SmartSEM or Thermo Fisher Scientific xT.
+        verbose : BOOL, optional
+            If True, selected parameters will be printed to stdout
+            in groups. The parameters and groups chosen are defined
+            as class attributes. The default is True.
+
+        Returns
+        -------
+        None.
+
         """
-        self.image_path = image_path
-        self.params = SEMparams.extract_params(self.image_path)
+        self.img_path = image_path
+        self.img_type, self.img_header = SEMparams.get_image_type_and_header(image_path)
 
-        try:
-            self.params_grouped = SEMparams.group_parameters(self.params)
-            if verbose:
-                print("\nParameters extracted from the SEM image:")
-                print(self.image_path+"\n")
-                SEMparams.print_params(self.params_grouped)
+        if self.img_type == "Zeiss":
+            self.params = SEMparams.extract_params_Zeiss(self.img_header)
+            self.params_grouped = SEMparams.group_parameters_Zeiss(self.params)
+            self.software_version = self.params["SV"]["Version"]
 
-        except KeyError:
-            print("**Some parameters not found.**")
-            print("Image: "+self.image_path)
-            print("Printing those found (not ordered):")
-            for i, j in self.params.items():
-                print(i+" =", end=' ')
-                if isinstance(j, str):
-                    print(j, end=' ')
-                else:
-                    for k in enumerate(j):
-                        print(k[1], end=' ')
-                print()
+        elif self.img_type == "ThermoFisher":
+            self.params = SEMparams.extract_params_ThermoFisher(self.img_header)
+            self.params_grouped = SEMparams.group_parameters_ThermoFisher(self.params)
+            self.software_version = self.params["[System]"]["Software"]
+
+        if verbose:
+            print(f"\nParameters extracted from the SEM image: {self.img_path}\n")
+            SEMparams.print_param_dict(self.params_grouped)
 
 
-    def get_parameter(self, name):
-        """
-        Return a single parameter with its unit, if applicable.
-        """
-        return self.params[name]
+    def __repr__(self):
+        """String representation."""
+        r_1 = f"{self.__class__.__name__}:"
+        r_2 = f"Image path: {self.img_path}"
+        r_3 = f"Image type: {self.img_type}"
+        r_4 = f"Software version: {self.software_version}"
+        return "\n\t".join([r_1, r_2, r_3, r_4])
+
+
 
 
 def main():
@@ -355,9 +693,9 @@ def main():
     Command line entry point.
 
     Calling "sem_io filename" at the command line, where "filename" is
-    the full path to an SEM image recorded with Zeiss SmartSEM V06,
-    instantiates the SEMparams class and prints the parameters extracted
-    from the image header to the terminal.
+    the full path to an SEM image recorded either with Zeiss SmartSEM
+    or with Thermo Fisher Scientific xT, uses the SEMparams class to
+    print the parameters extracted from the image header to the terminal.
 
     Returns
     -------
@@ -366,8 +704,9 @@ def main():
     """
     d_0 = "Prints various parameters from the header of an SEM image"
     parser = argparse.ArgumentParser(description=d_0)
-    q_0 = "full path to a .tif image produced by the Zeiss SmartSEM software"
-    parser.add_argument("image_path", help=q_0)
+    q_0 = "full path to a .tif image produced by either the Zeiss SmartSEM"
+    q_1 = " or the Thermo Fisher Scientific xT software"
+    parser.add_argument("image_path", help=q_0+q_1)
     parser.add_argument('-v', '--version', action='version',
                         version=f'%(prog)s {__version__}')
     args = parser.parse_args()

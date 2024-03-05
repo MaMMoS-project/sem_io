@@ -35,6 +35,10 @@ MANIFEST
 # Sphinx documentation
 docs/_build/
 
+# Spyder project settings
+.spyderproject
+.spyproject
+
 # PyBuilder
 target/
 

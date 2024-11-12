@@ -33,7 +33,7 @@ import math
 
 from PIL import Image
 
-__version__ = "0.0.2"
+__version__ = "0.1.0"
 
 
 class SEMparams():
@@ -139,6 +139,10 @@ class SEMparams():
                      'AngularFieldWidth' : '[EBeam]',
                      'AngularPixelWidth' : '[EBeam]',
                      'ElectronChannelingPatternIsOn' : '[EBeam]',
+                     'ModeOn' : '[EBeamDeceleration]',
+                     'LandingEnergy' : '[EBeamDeceleration]',
+                     'ImmersionRatio' : '[EBeamDeceleration]',
+                     'StageBias' : '[EBeamDeceleration]',
                      'Dwelltime' : '[Scan]',
                      'PixelWidth' : '[Scan]',
                      'Average' : '[Scan]',
@@ -170,6 +174,8 @@ class SEMparams():
                            "BeamShiftX", "BeamShiftY", "UseCase",
                            "SourceTiltX", "SourceTiltY"
                            ],
+                 "Beam Deceleration" : ["ModeOn", "LandingEnergy",
+                                        "ImmersionRatio", "StageBias"],
                  "Scanning" : ["FrameTime", "LineTime",
                                "Dwelltime", "Average", "Integrate",
                                "ScanRotation", "TiltCorrectionIsOn",

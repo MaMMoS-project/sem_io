@@ -78,7 +78,7 @@ convention = "numpy"
 docstring-code-format = true
 
 [project.scripts]
-sem_io = "sem_io.sem_io:main"
+sem_io = "sem_io.cli:cli"
 
 [tool.setuptools.dynamic]
 version = {attr = "sem_io.__version__"}

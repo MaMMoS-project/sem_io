@@ -1,12 +1,13 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "sem_io"
 description = 'Python functions for extracting metadata parameters from the header of SEM images'
 authors = [{name = "Thomas G. Woodcock"},]
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 
 classifiers=[
     'Programming Language :: Python',
@@ -14,7 +15,6 @@ classifiers=[
     'Development Status :: 4 - Beta',
     'Intended Audience :: End Users/Desktop',
     'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Visualization',
@@ -35,8 +35,53 @@ dynamic = ["version"]
 'Source' = 'https://github.com/tgwoodcock/sem_io.git'
 'Bug Tracker' = 'https://github.com/tgwoodcock/sem_io.git/issues'
 
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pre-commit                   >= 1.16",
+]
+
+[tool.ruff.lint]
+select = [
+  "B",   # flake8-bugbear
+  "D",   # pydocstyle
+  "E",   # pycodestyle
+  "F",   # Pyflakes
+  "I",   # isort
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+]
+ignore = [
+  # conflict with other rules
+  "D203", # one-blank-line-before-class (conflicts with D204)
+  "D212", # multi-line-summary-first-line (conflicts with D213)
+  # conflict with formatter
+  "D206", # indent-with-spaces
+  "D300", # triple-single-quotes
+  "E111", # indentation-with-invalid-multiple
+  "E114", # indentation-with-invalid-multiple-comment
+  "E117", # over-indented
+  # conflict with Python 3.6 compatibility
+  "UP022", # replace-stdout-stderr
+  # personal preference
+  "SIM108", # turnary operator instead of if else block
+  "D205", # one-blank-line-required-between-summary-line-and-description
+]
+
+[tool.ruff.lint.isort]
+known-local-folder = ["src"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+docstring-code-format = true
+
 [project.scripts]
-sem_io = "sem_io:main"
+sem_io = "sem_io.sem_io:main"
 
 [tool.setuptools.dynamic]
 version = {attr = "sem_io.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

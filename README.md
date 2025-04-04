@@ -25,11 +25,55 @@ pip install .
 To print an overview of parameters from the image header in the console, at the command line, you can do:
 
 ```bash
-sem_io path_to_my_image.tif
+sem_io path/to/my_image.tif
 ```
 
 <BR>
 
+To print an overview from several images one after the other, you can use:
+
+```bash
+sem_io path/to/my_folder_of_tif_images
+```
+
+<BR>
+
+The flag -d can be used to additionally dump selected metadata to json:
+
+```bash
+sem_io path/to/my_image.tif -d
+```
+
+The json file will be located in the same folder as the image and will have the name my_image_metadata.json.
+
+<BR>
+
+To dump metadata from a folder containing many images, without printing the output to the screen,
+you can additionally use the flag -s:
+
+```bash
+sem_io path/to/my_folder_of_tif_images -d -s
+```
+
+or, more simply:
+
+```bash
+sem_io path/to/my_folder_of_tif_images -ds
+```
+
+Either of the above two commands will save a json file for each .tif image in the specified folder.
+
+<BR>
+
+If you prefer a simple text file instead of a json, you can pipe the output of sem_io to file like this:
+
+```bash
+sem_io path/to/my_folder_of_tif_images > other/path/my_text_output.txt
+```
+
+The above command will put the output of sem_io for all the .tif images in the folder given into a single text file. You can equally to this for a single .tif image by specifying the path to an image instead of to a folder.
+
+<br>
 
 *Python*
 

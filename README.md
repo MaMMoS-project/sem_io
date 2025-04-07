@@ -23,7 +23,7 @@ pip install .
 To print an overview of parameters from the image header in the console, at the command line, you can do:
 
 ```bash
-sem_io path/to/my_image.tif
+sem_io path/to/my/image.tif
 ```
 
 <BR>
@@ -31,7 +31,7 @@ sem_io path/to/my_image.tif
 To print an overview from several images one after the other, you can use:
 
 ```bash
-sem_io path/to/my_image.tif path/to/my_image_2.tif path/to/my_image_3.tif
+sem_io path/to/my/image.tif path/to/my/image_2.tif path/to/my/image_3.tif
 ```
 
 <BR>
@@ -39,7 +39,7 @@ sem_io path/to/my_image.tif path/to/my_image_2.tif path/to/my_image_3.tif
 To print an overview from all images in a folder, you can use:
 
 ```bash
-sem_io path/to/my_folder_of_tif_images
+sem_io path/to/my/folder_of_tif_images
 ```
 
 <BR>
@@ -47,7 +47,7 @@ sem_io path/to/my_folder_of_tif_images
 You can process any number of individual images and folders at the same time:
 
 ```bash
-sem_io path/to/my_image.tif path/to/my_folder_of_tif_images path/to/my_image_2.tif path/to/my_image_3.tif
+sem_io path/to/my/image.tif path/to/my/folder_of_tif_images path/to/my/image_2.tif
 ```
 
 <BR>
@@ -55,7 +55,7 @@ sem_io path/to/my_image.tif path/to/my_folder_of_tif_images path/to/my_image_2.t
 The flag -d can be used to additionally dump selected metadata to json:
 
 ```bash
-sem_io path/to/my_image.tif -d
+sem_io path/to/my/image.tif -d
 ```
 
 The json file will be located in the same folder as the image and will have the name my_image_metadata.json.
@@ -67,13 +67,13 @@ To dump metadata from a folder containing many images, without printing the outp
 you can additionally use the flag -s:
 
 ```bash
-sem_io path/to/my_folder_of_tif_images -d -s
+sem_io path/to/my/folder_of_tif_images -d -s
 ```
 
 or, more simply:
 
 ```bash
-sem_io path/to/my_folder_of_tif_images -ds
+sem_io path/to/my/folder_of_tif_images -ds
 ```
 
 Either of the above two commands will save a json file for each .tif image in the specified folder.
@@ -83,7 +83,7 @@ Either of the above two commands will save a json file for each .tif image in th
 If you prefer a simple text file instead of a json, you can pipe the output of sem_io to file like this:
 
 ```bash
-sem_io path/to/my_folder_of_tif_images > other/path/my_text_output.txt
+sem_io path/to/my/folder_of_tif_images > other/path/my_text_output.txt
 ```
 
 The above command will put the output of sem_io for all the .tif images in the folder given into a single text file. You can equally do this for a single .tif image by specifying the path to an image instead of to a folder.
@@ -103,7 +103,7 @@ You can also import the module and use the functions directly in Python.
 To print an overview of parameters from the image header in the console:
 
 ```python
->>> my_params = sem_io.SEMparams("path_to_my_image.tif")
+>>> my_params = sem_io.SEMparams(r"path/to/my/image.tif")
 ```
 
 <BR>
@@ -112,7 +112,7 @@ To print an overview of parameters from the image header in the console:
 If you just want to collect and store the parameters and not print them, you can do:
 
 ```python
->>> my_params = sem_io.SEMparams("path_to_my_image.tif", verbose=False)
+>>> my_params = sem_io.SEMparams(r"path/to/my/image.tif", verbose=False)
 ```
 
 <BR>
@@ -154,12 +154,33 @@ Alternatively you can dump all the header parameters to a json file (optionally 
 
 <BR>
 
+
+*Calling the command line interface from Python*
+
+You can call the functions from the command line within Python using the subprocess module. For example, to dump metadata from a directory of images to json and print the output to the Python terminal:
+
+```python
+>>> import subprocess
+>>> subprocess.run(["sem_io", "path/to/my/folder_of_tif_images", "-d"])
+```
+
+To pipe the output of sem_io to a text file instead:
+
+```python
+>>> with open("my/output/path/myfile.txt", "w") as output_file:
+...    process = subprocess.Popen(["sem_io", r"path/to/my/image.tif"], stdout=output_file)
+...    process.communicate()
+...
+```
+
+<BR>
+
 ### Getting the Image Pixel Size and Adding a Scalebar
 
 All the functions are staticmethods, so you don't need to instantiate the SEMparams class at all. For example, there is a bespoke function for getting the image pixel size and its unit in one line of code:
 
 ```python
->>> pixel_size, unit = sem_io.SEMparams.get_image_pixel_size("path_to_my_image.tif")
+>>> pixel_size, unit = sem_io.SEMparams.get_image_pixel_size(r"path/to/my/image.tif")
 ```
 
 This is useful if you want to plot the SEM image using [matplotlib](https://matplotlib.org/) and add a scalebar with the correct dimensions using [matplotlib-scalebar](https://github.com/ppinard/matplotlib-scalebar). Here's the whole process as an example:

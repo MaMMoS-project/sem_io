@@ -1,8 +1,6 @@
 # sem_io
 
-Provides some helper functions to extract and view parameters stored in the header of SEM images (.tif) recorded using either Zeiss SmartSEM or Thermo Fisher Scientific xT software.
-
-This is a single Python module and can either be installed or easily incorporated into other projects (the license must be retained in this case).
+Helper functions to extract, view and store metadata from the header of SEM images (.tif) recorded using either Zeiss SmartSEM or Thermo Fisher Scientific xT software.
 
 <BR>
 
@@ -33,7 +31,23 @@ sem_io path/to/my_image.tif
 To print an overview from several images one after the other, you can use:
 
 ```bash
+sem_io path/to/my_image.tif path/to/my_image_2.tif path/to/my_image_3.tif
+```
+
+<BR>
+
+To print an overview from all images in a folder, you can use:
+
+```bash
 sem_io path/to/my_folder_of_tif_images
+```
+
+<BR>
+
+You can process any number of individual images and folders at the same time:
+
+```bash
+sem_io path/to/my_image.tif path/to/my_folder_of_tif_images path/to/my_image_2.tif path/to/my_image_3.tif
 ```
 
 <BR>
@@ -45,6 +59,7 @@ sem_io path/to/my_image.tif -d
 ```
 
 The json file will be located in the same folder as the image and will have the name my_image_metadata.json.
+As before, you can process any number of images and/or folders of images with the flag -d.
 
 <BR>
 
@@ -71,7 +86,7 @@ If you prefer a simple text file instead of a json, you can pipe the output of s
 sem_io path/to/my_folder_of_tif_images > other/path/my_text_output.txt
 ```
 
-The above command will put the output of sem_io for all the .tif images in the folder given into a single text file. You can equally to this for a single .tif image by specifying the path to an image instead of to a folder.
+The above command will put the output of sem_io for all the .tif images in the folder given into a single text file. You can equally do this for a single .tif image by specifying the path to an image instead of to a folder.
 
 <br>
 

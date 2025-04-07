@@ -4,23 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sem_io"
-description = 'Python functions for extracting metadata parameters from the header of SEM images'
-authors = [{name = "Thomas G. Woodcock"},]
+description = "Python functions to extract, view and store metadata from the header of SEM images"
+authors = [
+    {name = "Thomas G. Woodcock"},
+    {name = "The sem_io Developers"},
+]
+maintainers = [{name = "Thomas G. Woodcock"},]
 license = "MIT"
 license-files = ["LICENSE"]
 
 classifiers=[
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: End Users/Desktop',
-    'Intended Audience :: Science/Research',
-    'Operating System :: OS Independent',
-    'Topic :: Scientific/Engineering',
-    'Topic :: Scientific/Engineering :: Visualization',
-    'Topic :: Scientific/Engineering :: Image Processing',
-    'Topic :: Scientific/Engineering :: Physics',
-    'Topic :: Utilities',
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Utilities",
 ]
 keywords = ["research", "data", "electron microscopy", "SEM", "image", "metadata"]
 requires-python = ">=3.6"
@@ -32,8 +36,8 @@ dynamic = ["version"]
 'content-type' = "text/markdown"
 
 [project.urls]
-'Source' = 'https://github.com/tgwoodcock/sem_io.git'
-'Bug Tracker' = 'https://github.com/tgwoodcock/sem_io.git/issues'
+"Source" = "https://github.com/tgwoodcock/sem_io.git"
+"Bug Tracker" = "https://github.com/tgwoodcock/sem_io.git/issues"
 
 [project.optional-dependencies]
 dev = [

@@ -43,13 +43,13 @@ def cli():
     parser = argparse.ArgumentParser(description=d_0)
 
     path_help = (
-        "full path to either a single .tif image or a folder containing "
-        "several .tif images. The images must have been produced by either "
-        "the Zeiss SmartSEM or the Thermo Fisher Scientific xT software. "
-        "If image_path points to a folder, all the .tif images in that "
-        "folder will be processed."
+        "full path(s) to any number of single .tif image(s) or "
+        "folder(s) containing several .tif images. The images must "
+        "have been produced by either the Zeiss SmartSEM or the "
+        "Thermo Fisher Scientific xT software. In the case of folders, "
+        "all the .tif images within each folder will be processed."
     )
-    parser.add_argument("image_path", help=path_help)
+    parser.add_argument("image_path", nargs="+", help=path_help)
 
     parser.add_argument(
         "-v", "--version", action="version", version=f"%(prog)s {__version__}"
@@ -84,16 +84,19 @@ def cli():
         )
         parser.error(err_msg)
 
-    p_img = Path(args.image_path)
-    if p_img.is_file():
-        s_p = SEMparams(args.image_path, verbose=verbose)
-        if args.dump:
-            fn = p_img.parent.joinpath(p_img.stem + "_metadata.json")
-            s_p.dump_params_to_json(s_p.params_grouped, fn, image_path=None)
-    else:
-        all_tifs = glob.glob(p_img.joinpath("*.tif").as_posix())
-        for i in all_tifs:
-            s_p = SEMparams(i, verbose=verbose)
+    for p_img in args.image_path:
+        p_img = Path(p_img)
+        if p_img.is_file():
+            s_p = SEMparams(p_img, verbose=verbose)
             if args.dump:
-                fn = s_p.img_path.parent.joinpath(s_p.img_path.stem + "_metadata.json")
+                fn = p_img.parent.joinpath(p_img.stem + "_metadata.json")
                 s_p.dump_params_to_json(s_p.params_grouped, fn, image_path=None)
+        else:
+            all_tifs = glob.glob(p_img.joinpath("*.tif").as_posix())
+            for i in all_tifs:
+                s_p = SEMparams(i, verbose=verbose)
+                if args.dump:
+                    fn = s_p.img_path.parent.joinpath(
+                        s_p.img_path.stem + "_metadata.json"
+                    )
+                    s_p.dump_params_to_json(s_p.params_grouped, fn, image_path=None)

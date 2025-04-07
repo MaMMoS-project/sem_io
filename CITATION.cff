@@ -20,4 +20,4 @@ license: MIT
 message: "If you would like to cite this code, please do so using these metadata."
 repository-code: "https://github.com/tgwoodcock/sem_io"
 title: "sem_io"
-version: 0.2.0
+version: 0.2.1

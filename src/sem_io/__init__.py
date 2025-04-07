@@ -26,4 +26,4 @@ header of SEM images (.tif) recorded using either the software
 Zeiss SmartSEM or the software Thermo Fisher Scientific xT.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"

@@ -18,7 +18,7 @@ pip install .
 
 ### Usage
 
-*Command line*
+**Command line**
 
 To print an overview of parameters from the image header in the console, at the command line, you can do:
 
@@ -31,7 +31,7 @@ sem_io path/to/my/image.tif
 To print an overview from several images one after the other, you can use:
 
 ```bash
-sem_io path/to/my/image.tif path/to/my/image_2.tif path/to/my/image_3.tif
+sem_io path/to/my/image.tif path/to/my/image2.tif path/to/my/image3.tif
 ```
 
 <BR>
@@ -47,7 +47,7 @@ sem_io path/to/my/folder_of_tif_images
 You can process any number of individual images and folders at the same time:
 
 ```bash
-sem_io path/to/my/image.tif path/to/my/folder_of_tif_images path/to/my/image_2.tif
+sem_io path/to/my/image.tif path/to/my/folder_of_tif_images path/to/my/image2.tif
 ```
 
 <BR>
@@ -90,19 +90,14 @@ The above command will put the output of sem_io for all the .tif images in the f
 
 <br>
 
-*Python*
+**Python**
 
 You can also import the module and use the functions directly in Python.
-
-```python
->>> import sem_io
-```
-
-<BR>
 
 To print an overview of parameters from the image header in the console:
 
 ```python
+>>> import sem_io
 >>> my_params = sem_io.SEMparams(r"path/to/my/image.tif")
 ```
 
@@ -148,26 +143,26 @@ Both my_params.params and my_params.params_groups are dictionaries and any param
 Alternatively you can dump all the header parameters to a json file (optionally including a key giving the original image path) like this:
 
 ```python
->>> my_params.dump_params_to_json(my_params.params, "my_json_path.json", image_path=my_params.img_path)
+>>> my_params.dump_params_to_json(my_params.params, r"my_json_path.json", image_path=my_params.img_path)
 ```
 
 
 <BR>
 
 
-*Calling the command line interface from Python*
+**Calling the command line functionality from Python**
 
 You can call the functions from the command line within Python using the subprocess module. For example, to dump metadata from a directory of images to json and print the output to the Python terminal:
 
 ```python
 >>> import subprocess
->>> subprocess.run(["sem_io", "path/to/my/folder_of_tif_images", "-d"])
+>>> subprocess.run(["sem_io", r"path/to/my/folder_of_tif_images", "-d"])
 ```
 
 To pipe the output of sem_io to a text file instead:
 
 ```python
->>> with open("my/output/path/myfile.txt", "w") as output_file:
+>>> with open(r"my/output/path/myfile.txt", "w") as output_file:
 ...    process = subprocess.Popen(["sem_io", r"path/to/my/image.tif"], stdout=output_file)
 ...    process.communicate()
 ...
@@ -189,15 +184,15 @@ This is useful if you want to plot the SEM image using [matplotlib](https://matp
 >>> import matplotlib.pyplot as plt
 >>> from matplotlib_scalebar.scalebar import ScaleBar
 >>> import sem_io
->>> my_image = plt.imread("path_to_my_image.tif")
+>>> my_image = plt.imread(r"path_to_my_image.tif")
 >>> fig, ax = plt.subplots()
 >>> ax.imshow(my_image, cmap='gray')
->>> pixel_size, unit = sem_io.SEMparams.get_image_pixel_size("path_to_my_image.tif")
+>>> pixel_size, unit = sem_io.SEMparams.get_image_pixel_size(r"path_to_my_image.tif")
 >>> my_scalebar = ScaleBar(pixel_size, units=unit, location='lower right', scale_loc='top')
 >>> ax.add_artist(my_scalebar)
 ```
 
-*Even Electron Channeling Patterns acquired in rocking beam mode are correctly handled by sem_io.SEMparams.get_image_pixel_size()*
+Even Electron Channeling Patterns acquired in rocking beam mode are correctly handled by sem_io.SEMparams.get_image_pixel_size()
 
 <BR>
 
@@ -210,3 +205,7 @@ This is useful if you want to plot the SEM image using [matplotlib](https://matp
 
 * The selected parameters defined in the class definition of SEMparams form a subset of those available in the header of the .tif image. If you are interested in other parameters, the program can be easily customised - all the header parameters are extracted and are available as the "params" instance attribute.
 * If there are any issues, please feel free to get in touch using the [issues mechanism](https://github.com/tgwoodcock/sem_io/issues)
+
+### Code Archive
+
+This repository is archived on Zenodo: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15180575.svg)](https://doi.org/10.5281/zenodo.15180575)

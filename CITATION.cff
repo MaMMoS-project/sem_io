@@ -7,7 +7,8 @@ authors:
   - name: The sem_io Developers
     website: "https://github.com/tgwoodcock/sem_io/graphs/contributors"
 cff-version: 1.2.0
-date-released: "2025-04-07"
+date-released: "2025-04-09"
+https://doi.org/10.5281/zenodo.15180575
 keywords:
   - "electron microscopy"
   - metadata

@@ -204,7 +204,7 @@ Even Electron Channeling Patterns acquired in rocking beam mode are correctly ha
 ### General
 
 * The selected parameters defined in the class definition of SEMparams form a subset of those available in the header of the .tif image. If you are interested in other parameters, the program can be easily customised - all the header parameters are extracted and are available as the "params" instance attribute.
-* If there are any issues, please feel free to get in touch using the [issues mechanism](https://github.com/tgwoodcock/sem_io/issues)
+* If there are any issues, please feel free to get in touch using the [issues mechanism](https://github.com/MaMMoS-project/sem_io/issues)
 
 ### Code Archive
 

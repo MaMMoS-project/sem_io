@@ -36,8 +36,8 @@ dynamic = ["version"]
 'content-type' = "text/markdown"
 
 [project.urls]
-"Source" = "https://github.com/tgwoodcock/sem_io.git"
-"Bug Tracker" = "https://github.com/tgwoodcock/sem_io.git/issues"
+"Source" = "https://github.com/MaMMoS-project/sem_io.git"
+"Bug Tracker" = "https://github.com/MaMMoS-project/sem_io.git/issues"
 
 [project.optional-dependencies]
 dev = [

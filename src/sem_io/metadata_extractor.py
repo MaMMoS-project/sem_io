@@ -335,7 +335,7 @@ class SEMparams:
             String containing the data from the image header.
         """
         if Path(image_path).suffix != ".tif":
-            msg = "sem_io:" "The image path must point to a .tif file."
+            msg = "sem_io: the image path must point to a .tif file."
             raise Exception(msg) from None
 
         n_matches = 0

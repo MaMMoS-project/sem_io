@@ -26,4 +26,8 @@ header of SEM images (.tif) recorded using either the software
 Zeiss SmartSEM or the software Thermo Fisher Scientific xT.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
+
+from sem_io.metadata_extractor import SEMparams
+
+__all__ = [SEMparams]

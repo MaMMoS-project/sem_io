@@ -79,9 +79,7 @@ def cli():
     verbose = not args.silent
 
     if args.silent and not args.dump:
-        err_msg = (
-            "Printing and saving both suppressed (-s but no -d): " "nothing to do."
-        )
+        err_msg = "Printing and saving both suppressed (-s but no -d): nothing to do."
         parser.error(err_msg)
 
     for p_img in args.image_path:

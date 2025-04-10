@@ -7,7 +7,7 @@ authors:
   - name: The sem_io Developers
     website: "https://github.com/MaMMoS-project/sem_io/graphs/contributors"
 cff-version: 1.2.0
-date-released: "2025-04-09"
+date-released: "2025-04-10"
 doi: 10.5281/zenodo.15180575
 keywords:
   - "electron microscopy"
@@ -21,4 +21,4 @@ license: MIT
 message: "If you would like to cite this code, please do so using these metadata."
 repository-code: "https://github.com/MaMMoS-project/sem_io"
 title: "sem_io"
-version: 0.2.1
+version: 0.2.2

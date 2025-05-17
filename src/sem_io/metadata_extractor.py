@@ -1,24 +1,24 @@
-##MIT License
+# MIT License
 ##
-##Copyright (c) 2022 Thomas G. Woodcock
+# Copyright (c) 2022 Thomas G. Woodcock
 ##
-##Permission is hereby granted, free of charge, to any person obtaining a copy
-##of this software and associated documentation files (the "Software"), to deal
-##in the Software without restriction, including without limitation the rights
-##to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-##copies of the Software, and to permit persons to whom the Software is
-##furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 ##
-##The above copyright notice and this permission notice shall be included in all
-##copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
 ##
-##THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-##IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-##FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-##AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-##LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-##OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-##SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 """
 Provides some helper functions to extract and view parameters
@@ -32,6 +32,9 @@ import math
 from pathlib import Path
 
 from PIL import Image
+
+import h5py
+import numpy as np
 
 
 class SEMparams:
@@ -348,7 +351,8 @@ class SEMparams:
 
         if n_matches == 0:
             q_0 = "The image does not appear to be from either"
-            q_1 = " or ".join(SEMparams.TAGS.keys()) + " software. Missing tags"
+            q_1 = " or ".join(SEMparams.TAGS.keys()) + \
+                " software. Missing tags"
             q_2 = " and ".join(str(i) for i in SEMparams.TAGS.values()) + "."
             raise Exception(" ".join(["sem_io:", q_0, q_1, q_2])) from None
 
@@ -388,7 +392,8 @@ class SEMparams:
         """
         img_hdr = image_header.split("\r\n")
 
-        idx = [i for i, item in enumerate(img_hdr[:-1]) if item[0].isalpha()][0]
+        idx = [i for i, item in enumerate(
+            img_hdr[:-1]) if item[0].isalpha()][0]
 
         locs = range(idx + 1, len(img_hdr), 2)
 
@@ -403,7 +408,7 @@ class SEMparams:
                 t = img_hdr[i].find(":")
                 if t != -1:
                     k = img_hdr[i][:t]
-                    v = img_hdr[i][t + 1 :]
+                    v = img_hdr[i][t + 1:]
                     grp = img_hdr[i - 1][:2]
                     params[grp][k.strip()] = v.strip()
 
@@ -467,7 +472,8 @@ class SEMparams:
                     params[p[0]][j[0].strip()] = j[1].strip()
             else:
                 idx = [i for i, j in enumerate(g) if j == "["]
-                g_s = [g[i:j].split("\r\n") for i, j in zip(idx, idx[1:] + [None])]
+                g_s = [g[i:j].split("\r\n")
+                       for i, j in zip(idx, idx[1:] + [None])]
                 for m in g_s:
                     params[m[0]] = {}
                     for n in m[1:]:
@@ -513,7 +519,8 @@ class SEMparams:
             if "ElectronChannelingPatternIsOn" in params["[EBeam]"]:
                 if params["[EBeam]"]["ElectronChannelingPatternIsOn"] == "On":
                     img_pix_size = (
-                        math.degrees(float(params["[EBeam]"]["AngularPixelWidth"])),
+                        math.degrees(
+                            float(params["[EBeam]"]["AngularPixelWidth"])),
                         "deg",
                     )
                 else:
@@ -716,14 +723,16 @@ class SEMparams:
             self.software_version = self.params["SV"]["Version"]
 
         elif self.img_type == "ThermoFisher":
-            self.params = SEMparams.extract_params_ThermoFisher(self.img_header)
+            self.params = SEMparams.extract_params_ThermoFisher(
+                self.img_header)
             self.params_grouped = SEMparams.group_parameters_ThermoFisher(
                 self.params, self.img_path.name, self.img_type
             )
             self.software_version = self.params["[System]"]["Software"]
 
         if verbose:
-            print(f"\nParameters extracted from the SEM image: {self.img_path}\n")
+            print(
+                f"\nParameters extracted from the SEM image: {self.img_path}\n")
             SEMparams.print_param_dict(self.params_grouped)
 
     def __repr__(self):
@@ -735,3 +744,33 @@ class SEMparams:
             f"\tSoftware version: {self.software_version}\n"
         )
         return info
+
+
+def to_hdf5(path_directory):
+
+    # Check if given path is actually directory, cancel otherwise
+    p = Path(path_directory)
+    if not p.is_dir():
+        err = 'Please only pass the path of a directory to this function.'
+        raise Exception(err)
+
+    # list of all SEM images in specified directory
+    f_p = [Path(f) for f in list(p.iterdir())
+           if f.suffix == ('.tif' or '.tiff')]
+
+    hdf = h5py.File(p.joinpath(p.stem + '.hdf5'), mode='a')
+
+    for img_name in f_p:
+        img = np.array(Image.open(img_name))
+        img_param = SEMparams(img_name, verbose=False).params_grouped
+        height = int(img_param['Image']['ResolutionY'])
+        width = int(img_param['Image']['ResolutionX'])
+        img = img[:height, :width]
+
+        hdf.create_dataset(img_name.stem + '/Image', data=img)
+
+        for group in list(img_param.keys()):
+            for key in list(img_param[group].keys()):
+                hdf.create_dataset(f"{img_name.stem}/Parameters/{group}/{key}",
+                                   data=img_param[group][key])
+    hdf.close()

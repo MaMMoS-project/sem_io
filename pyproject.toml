@@ -28,7 +28,9 @@ classifiers=[
 ]
 keywords = ["research", "data", "electron microscopy", "SEM", "image", "metadata"]
 requires-python = ">=3.6"
-dependencies = ["Pillow"]
+dependencies = ["Pillow",
+                "numpy",
+				"h5py"]
 dynamic = ["version"]
 
 [project.readme]

@@ -27,7 +27,7 @@ import glob
 from pathlib import Path
 
 from sem_io import __version__
-from sem_io.metadata_extractor import SEMparams
+from sem_io.metadata_extractor import SEMparams, to_hdf5
 
 
 def cli():
@@ -74,6 +74,12 @@ def cli():
         help="do not print output to terminal",
     )
 
+    parser.add_argument(
+        "--hdf5",
+        action="store_true",
+        help="Store images and their parameters of given directory in hdf5-file",
+    )
+
     args = parser.parse_args()
 
     verbose = not args.silent
@@ -89,6 +95,9 @@ def cli():
             if args.dump:
                 fn = p_img.parent.joinpath(p_img.stem + "_metadata.json")
                 s_p.dump_params_to_json(s_p.params_grouped, fn, image_path=None)
+            if args.hdf5:
+                err = "HDF5-files can only be generated from directories, not files"
+                parser.error(err)
         else:
             all_tifs = glob.glob(p_img.joinpath("*.tif").as_posix())
             for i in all_tifs:
@@ -98,3 +107,5 @@ def cli():
                         s_p.img_path.stem + "_metadata.json"
                     )
                     s_p.dump_params_to_json(s_p.params_grouped, fn, image_path=None)
+            if args.hdf5:
+                to_hdf5(p_img)

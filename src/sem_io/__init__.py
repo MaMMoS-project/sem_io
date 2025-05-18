@@ -28,6 +28,6 @@ Zeiss SmartSEM or the software Thermo Fisher Scientific xT.
 
 __version__ = "0.2.2"
 
-from sem_io.metadata_extractor import SEMparams
+from sem_io.metadata_extractor import SEMparams, to_hdf5
 
-__all__ = [SEMparams]
+__all__ = [SEMparams, to_hdf5]

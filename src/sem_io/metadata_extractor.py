@@ -752,6 +752,65 @@ def to_hdf5(path_directory):
     -------
     None.
     """
+    TF_units = {
+        "Beam/ApertureDiameter": "m",
+        "Beam/BeamCurrent": "A",
+        "Beam/BeamShiftX": "m",
+        "Beam/BeamShiftY": "m",
+        "Beam/SourceTiltX": "rad",
+        "Beam/SourceTiltY": "rad",
+        "Beam/SpecimenCurrent": "A",
+        "Beam Deceleration/LandingEnergy": "V",
+        "Beam Deceleration/StageBias": "V",
+        "Detector/Brightness": "%",
+        "Detector/Contrast": "%",
+        "Image/HFW": "m",
+        "Image/PixelWidth": "m",
+        "Image/VFW": "m",
+        "SEM/ChPressure": "Pa",
+        "SEM/EmissionCurrent": "A",
+        "SEM/HV": "V",
+        "Scanning/Dwelltime": "s",
+        "Scanning/FrameTime": "s",
+        "Scanning/LineTime": "s",
+        "Scanning/PreTilt": "rad",
+        "Scanning/ScanRotation": "rad",
+        "Scanning/SpecTilt": "rad",
+        "Scanning/TiltCorrectionAngle": "rad",
+        "Stage/StageR": "rad",
+        "Stage/StageTa": "rad",
+        "Stage/StageX": "m",
+        "Stage/StageY": "m",
+        "Stage/StageZ": "m",
+        "Stage/WD": "m",
+    }
+
+    Zeiss_units = {
+        "SEM/Gun Vacuum": "mbar",
+        "SEM/System Vacuum": "mbar",
+        "SEM/Fil I": "A",
+        "SEM/EHT": "kV",
+        "Beam/Aperture Size": "µm",
+        "Beam/Aperture at X": "%",
+        "Beam/Aperture at Y": "%",
+        "Beam/Stigmation X": "%",
+        "Beam/Stigmation Y": "%",
+        "Beam/Beam Shift X": "%",
+        "Beam/Beam Shift Y": "%",
+        "Beam/C3 Lens I": "A",
+        "Scanning/Cycle Time": "s",
+        "Scanning/Line Time": "ms",
+        "Scanning/Dwell Time": "ns",
+        "Image/Image Pixel Size": "nm",
+        "Image/Brightness": "%",
+        "Image/Contrast": "%",
+        "Stage/Stage at X": "mm",
+        "Stage/Stage at Y": "mm",
+        "Stage/Stage at Z": "mm",
+        "Stage/Stage at R": "°",
+        "Stage/WD": "mm",
+    }
+
     # Check if given path is actually directory, cancel otherwise
     p = Path(path_directory)
     if not p.is_dir():
@@ -765,9 +824,17 @@ def to_hdf5(path_directory):
 
     for img_name in f_p:
         img = np.array(Image.open(img_name))
+        img_type = SEMparams(img_name, verbose=False).img_type
         img_param = SEMparams(img_name, verbose=False).params_grouped
-        height = int(img_param["Image"]["ResolutionY"])
-        width = int(img_param["Image"]["ResolutionX"])
+        if img_type == "ThermoFisher":
+            units = TF_units
+            height = int(img_param["Image"]["ResolutionY"])
+            height = height - int(img_param["Image"]["DatabarHeight"])
+            width = int(img_param["Image"]["ResolutionX"])
+        elif img_type == "Zeiss":
+            units = Zeiss_units
+            width = int(img_param["Image"]["Store resolution"].split("*")[0])
+            height = int(img_param["Image"]["Store resolution"].split("*")[1])
         img = img[:height, :width]
 
         hdf.create_dataset(img_name.stem + "/Image", data=img)
@@ -778,4 +845,7 @@ def to_hdf5(path_directory):
                     f"{img_name.stem}/Parameters/{group}/{key}",
                     data=img_param[group][key],
                 )
+        for key in units:
+            hdf[f"{img_name.stem}/Parameters/" + key].attrs["unit"] = units[key]
+
     hdf.close()

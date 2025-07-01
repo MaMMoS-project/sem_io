@@ -88,6 +88,16 @@ sem_io path/to/my/folder_of_tif_images > other/path/my_text_output.txt
 
 The above command will put the output of sem_io for all the .tif images in the folder given into a single text file. You can equally do this for a single .tif image by specifying the path to an image instead of to a folder.
 
+<BR>
+
+A directory containing SEM-images can be written into an HDF5-file
+
+```bash
+sem_io --hdf5 path/to/images
+```
+
+This will create the file images.hdf5 inside the folder images which contains all SEM-images within this directory as NumPy-arrays and their respective metadata
+
 <br>
 
 **Python**
@@ -200,6 +210,8 @@ Even Electron Channeling Patterns acquired in rocking beam mode are correctly ha
 ### Dependencies
 
 * [Pillow](https://python-pillow.org/)
+* [NumPy] (https://numpy.org/)
+* [h5py]  (https://h5py.org/)
 
 ### General
 

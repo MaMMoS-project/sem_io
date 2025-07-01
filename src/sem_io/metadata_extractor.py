@@ -829,7 +829,6 @@ def to_hdf5(path_directory):
         if img_type == "ThermoFisher":
             units = TF_units
             height = int(img_param["Image"]["ResolutionY"])
-            height = height - int(img_param["Image"]["DatabarHeight"])
             width = int(img_param["Image"]["ResolutionX"])
         elif img_type == "Zeiss":
             units = Zeiss_units
